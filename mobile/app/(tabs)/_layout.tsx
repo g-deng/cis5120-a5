@@ -1,18 +1,22 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { YarnyColors } from '@/constants/theme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const router = useRouter();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: YarnyColors.button,
+        tabBarInactiveTintColor: YarnyColors.border,
+        tabBarStyle: {
+          backgroundColor: YarnyColors.background,
+          borderTopColor: YarnyColors.border,
+        },
         headerShown: false,
         tabBarButton: HapticTab,
       }}>
@@ -24,10 +28,37 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="search"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Search',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: '',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="plus" color={color} />,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            router.push('/new-project');
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        options={{
+          title: 'Stats',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
         }}
       />
     </Tabs>

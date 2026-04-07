@@ -1,24 +1,49 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const [fontsLoaded] = useFonts({
+    'MarkoOne-Regular': require('@/assets/fonts/MarkoOne-Regular.ttf'),
+    'Montserrat-Regular': require('@/assets/fonts/Montserrat-Regular.ttf'),
+    'Montserrat-SemiBold': require('@/assets/fonts/Montserrat-SemiBold.ttf'),
+    'Montserrat-Bold': require('@/assets/fonts/Montserrat-Bold.ttf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen
+          name="new-project"
+          options={{
+            title: 'New Project',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="project/[id]/active"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="project/[id]/details"
+          options={{ headerShown: false }}
+        />
       </Stack>
       <StatusBar style="auto" />
-    </ThemeProvider>
+    </>
   );
 }

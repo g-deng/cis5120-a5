@@ -27,6 +27,30 @@ export const Colors = {
   },
 };
 
+export const YarnyColors = {
+  background: '#AEC9D7',
+  card: '#457C99',
+  button: '#0F374E',
+  white: '#FFFFFF',
+  textPrimary: '#0F374E',
+  textSecondary: '#FFFFFF',
+  border: '#8AAFBF',
+};
+
+export const YarnyFonts = {
+  header: 'MarkoOne-Regular',
+  body: 'Montserrat-Regular',
+  bodySemiBold: 'Montserrat-SemiBold',
+  bodyBold: 'Montserrat-Bold',
+};
+
+export const YarnySizes = {
+  title: 36,
+  subtitle: 24,
+  body: 18,
+  caption: 14,
+};
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

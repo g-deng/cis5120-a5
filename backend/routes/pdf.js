@@ -1,25 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pool = require('../db');
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-});
-
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // POST /api/projects/:id/parse-pdf
-router.post('/:id/parse-pdf', upload.single('pdf'), async (req, res) => {
+// Body: { pdf_url: "https://...supabase.co/.../file.pdf" }
+router.post('/:id/parse-pdf', async (req, res) => {
   const client = await pool.connect();
 
   try {
-    // Validate file
-    if (!req.file) {
-      return res.status(400).json({ error: 'No PDF file uploaded' });
+    const { pdf_url } = req.body;
+    if (!pdf_url) {
+      client.release();
+      return res.status(400).json({ error: 'No pdf_url provided' });
     }
 
     // Validate project exists
@@ -28,19 +24,25 @@ router.post('/:id/parse-pdf', upload.single('pdf'), async (req, res) => {
       [req.params.id]
     );
     if (projectResult.rows.length === 0) {
+      client.release();
       return res.status(404).json({ error: 'Project not found' });
     }
 
+    // Download PDF from Supabase URL
+    const pdfResponse = await fetch(pdf_url);
+    if (!pdfResponse.ok) {
+      client.release();
+      return res.status(400).json({ error: 'Failed to download PDF from URL' });
+    }
+    const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+
     // Extract text from PDF
-    const pdfData = await pdfParse(req.file.buffer);
+    const pdfData = await pdfParse(pdfBuffer);
     const pdfText = pdfData.text;
 
-    // Send extracted text to Gemini for structuring
     console.log('--- PDF Text Length:', pdfText.length, 'characters ---');
-    console.log('--- PDF Text Preview (first 500 chars) ---');
-    console.log(pdfText.substring(0, 500));
-    console.log('--- End Preview ---');
 
+    // Send extracted text to Gemini for structuring
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const response = await model.generateContent([
@@ -68,24 +70,20 @@ Return ONLY valid JSON, no markdown fences, no explanation. If you are unsure ab
     ]);
 
     // Parse Gemini's response
-    let parsed;
     let responseText = response.response.text().trim();
-    // Strip markdown fences if present
     if (responseText.startsWith('```')) {
       responseText = responseText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
     }
-    parsed = JSON.parse(responseText);
+    const parsed = JSON.parse(responseText);
 
     // Write to database in a transaction
     await client.query('BEGIN');
 
-    // Update project with totals
     await client.query(
       'UPDATE projects SET total_yards = $1, total_rows = $2 WHERE id = $3',
       [parsed.total_yards, parsed.total_rows, req.params.id]
     );
 
-    // Insert sections and rows
     for (const section of parsed.sections) {
       const sectionResult = await client.query(
         'INSERT INTO sections (project_id, title, position) VALUES ($1, $2, $3) RETURNING id',
@@ -104,6 +102,8 @@ Return ONLY valid JSON, no markdown fences, no explanation. If you are unsure ab
     await client.query('COMMIT');
     res.json(parsed);
   } catch (err) {
+    console.error('--- PDF Parse Error ---');
+    console.error(err);
     await client.query('ROLLBACK');
     res.status(500).json({ error: err.message });
   } finally {
