@@ -59,15 +59,17 @@ export default function HomeScreen() {
       </View>
       <Text style={styles.subtitle}>Let's make something amazing!</Text>
 
+      <TouchableOpacity
+        style={styles.newButton}
+        onPress={() => router.push('/new-project')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.newButtonText}>+ New project</Text>
+      </TouchableOpacity>
+
       {projects.length === 0 ? (
         <View style={styles.emptyState}>
-          <TouchableOpacity
-            style={styles.newButton}
-            onPress={() => router.push('/new-project')}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.newButtonText}>New project</Text>
-          </TouchableOpacity>
+          <Text style={styles.emptyText}>No projects yet. Create one to get started!</Text>
         </View>
       ) : (
         <FlatList
@@ -122,20 +124,29 @@ const styles = StyleSheet.create({
     color: YarnyColors.textPrimary,
     padding: 16,
   },
-  emptyState: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
   newButton: {
     backgroundColor: YarnyColors.card,
     borderRadius: 12,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 8,
   },
   newButtonText: {
     fontFamily: YarnyFonts.bodySemiBold,
     fontSize: YarnySizes.body,
     color: YarnyColors.textSecondary,
+  },
+  emptyState: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  emptyText: {
+    fontFamily: YarnyFonts.body,
+    fontSize: YarnySizes.body,
+    color: YarnyColors.textPrimary,
+    textAlign: 'center',
+    marginTop: 24,
   },
   list: {
     paddingHorizontal: 16,

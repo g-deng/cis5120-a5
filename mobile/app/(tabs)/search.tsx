@@ -6,18 +6,22 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { getPublicProjects, type ProjectWithUser } from '@/services/api';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { useUser } from '@/hooks/use-user';
+import { getPublicProjects, saveProject, type ProjectWithUser } from '@/services/api';
 import { YarnyColors, YarnyFonts, YarnySizes } from '@/constants/theme';
 
-export default function SearchScreen() {
+export default function CommunityScreen() {
   const [projects, setProjects] = useState<ProjectWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { userId } = useUser();
   const router = useRouter();
 
   const fetchProjects = useCallback(async () => {
@@ -38,11 +42,21 @@ export default function SearchScreen() {
     }, [fetchProjects])
   );
 
+  const handleSave = async (projectId: string) => {
+    if (!userId) return;
+    try {
+      await saveProject(userId, projectId);
+      Alert.alert('Saved!', 'Project added to your Home.');
+    } catch (err) {
+      console.error('Failed to save project:', err);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Search</Text>
+          <Text style={styles.headerTitle}>Community</Text>
         </View>
         <ActivityIndicator size="large" color={YarnyColors.button} style={{ flex: 1 }} />
       </SafeAreaView>
@@ -52,7 +66,7 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Search</Text>
+        <Text style={styles.headerTitle}>Community</Text>
       </View>
       <FlatList
         data={projects}
@@ -81,6 +95,15 @@ export default function SearchScreen() {
               <Text style={styles.cardTitle}>{item.title}</Text>
               <Text style={styles.cardAuthor}>by {item.username}</Text>
             </View>
+            {userId && item.user_id !== userId && (
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={() => handleSave(item.id)}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="add-circle-outline" size={28} color={YarnyColors.textSecondary} />
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         )}
       />
@@ -133,6 +156,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: YarnyColors.textSecondary,
     marginTop: 2,
+  },
+  saveButton: {
+    padding: 8,
   },
   emptyText: {
     fontFamily: YarnyFonts.body,

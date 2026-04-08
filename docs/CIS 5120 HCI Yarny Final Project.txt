@@ -1,0 +1,10 @@
+﻿Figma
+Github 
+
+
+1. "Hello world" app. Our team is going to implement our UI in React Native. We will make a one-screen React Native app with "Hello World" on the opening screen. We will show that we are able to open it on our target device — an iPhone.
+2. "Hello styles." My style guide requires the colors #AEC9D7, #457C99, and #0F374E; typeface Marko One and Montserrat and icons from Material Symbols. The UI will use the Bento-style design language. I will add a screen to my Hello World app where I render divs with these colors; paragraphs with each of these fonts; and show my sample icons from my chosen icon library.
+3. AI (Pattern PDFs).  We will show that we can upload and parse a crochet pattern pdf into a Yarny project. Specifically, we can use AI to extract and format specific row instructions and group them by section, in less than 10 seconds. We will show we can upload the pdf to Supabase call this AI from the React Native App.
+4. Global Database. We will show that we can store previously completed projects for each user. More specifically, we can call GET APIs to retrieve user projects from all users on the app, and the app will display all projects together. We will also create POST endpoints for users to upload annotations / comments. We will show we can call this API from the React Native App.
+5. Local User State. We will show that we can track and aggregate user progress on projects. More specifically, we will store and display updated user progress on each project (rows completed), and also display statistics / history (rows completed today, this week, all time) in the React Native App. 
+6. Display and navigation. We will also show that we can display a parsed crochet pattern. Specifically, we will create the necessary UI elements and show that the buttons can be made interactive in the React Native App.

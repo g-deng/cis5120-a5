@@ -42,6 +42,14 @@ export default function RootLayout() {
           name="project/[id]/details"
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="demo/hello-world"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="demo/hello-styles"
+          options={{ headerShown: false }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </>

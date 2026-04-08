@@ -1,0 +1,111 @@
+﻿Assignment 5: Implementation Prototypes
+Due date and submission on Gradescope. 
+By the end of the semester, you need to have a polished, tested, and fully-functional version of your user interface. Until now, you have worked on designing your UI. But now you need to work on implementing a functioning UI that lives up to your vision. Unlike prior assignments, which developed the role and look and feel aspects of your interface, this assignment focuses entirely on implementation.
+Goal
+The output of this assignment is a set of runnable code snippets and outputs that show you (and us) that you can do everything that your UI needs to do. More concretely, you will provide a set of technical requirements, code repositories that implement your requirements, and snippets of outputs that show you met those requirements.
+This assignment is our major chance to make sure your project is on track. Final projects are due a little over two weeks after A5 is submitted. Give this assignment your best to make sure that you have removed as much uncertainty from your project as possible.
+Expectations
+You have flexibility in how you do this assignment. We require this minimal structure so that we can support your work as mentors and monitors of your progress:
+1. Get common ground with your team. Before doing implementation, you and your team need common ground on what your UI is supposed to do. Get to a place where the whole team feels good about the design. Do this as soon as possible. While you should continue to evolve your design throughout the rest of the semester, you need a clear vision now in order for your implementation efforts to be well-spent.
+2. Outline technical requirements. Figure out what you need your implementation prototypes to do. Recall that implementation prototypes answer questions about how your UI will work, like How will I implement the things that my UI requires? and Will my implementation work well enough?
+Each of your technical requirements will look like this:
+
+
+#. Description of a feature / attribute. Description of what you concretely need to see when running your prototype to make sure it is satisfied.
+	Here is one example of one requirement for a UI for collaborative music playing:
+1. Real-time collaboration. In one of my implementation prototypes, I need to show messages passed between two mobile devices with < 0.1 second latency, containing the data I intend to send between devices (messages containing the names of piano keys).
+	All teams need to have these two Hello technical requirements:
+* “Hello world” app. You create an extremely simple app that displays “Hello world” in the programming language and UI framework that you have chosen to use.
+* “Hello styles.” You implement one example of everything from your style guide (each font, color, icon) using the styling languages / libraries that you have chosen[1].
+Beyond this, for your particular UI, you may need technical requirements to cover…
+* Cross-device networking. If your design requires real-time collaboration between multiple users, you will need to show you can pass messages with the right kind of data with the right latency between the kinds of devices you need to support.
+* AI. If you require AI of any kind (classification, prediction, generation), pick that AI now. Show that on realistic, substantial examples, users will get reliably good results, as fast as they need to. Show that you can call that AI from your device/UI.
+* Drawing libraries. If your UI requires custom input widgets and displays (e.g., piano keys, renderings of drones, paths of basketball players, etc.), show that you can render graphics you need, on your device/UI.
+* Custom input events. If your user will interact through gestures, voice input, or some other special input, show you can reliably detect the input events you need, from your device/UI.
+* External APIs/databases. If you depend on an external API/database, show that you can call it from your device/UI and get the results you need. Note, however, that in some cases you may hard-code API/database data (see tips and boundaries).
+* ... and any other technical aspects essential to your UI working correctly.
+An example of a requirements list is here. Give this a read!
+Your list does not need to be elaborate or long-winded — just concrete and complete. From what we know of proposed projects, most teams will need 3–5 requirements beyond the “Hello” ones, and possibly fewer. Each teams’ requirements will vary greatly. So, to help you get them right, we require that you draft yours as soon as possible and then...
+3. Meet your project mentor in the first week of A5. You are required to meet your project mentor before Friday, March 27 EOD to check that your requirements list is complete. This is not meant to be tedious. Rather, it is meant to help you check that you are not skipping technical aspects that will negatively affect you later.
+You are responsible for setting this meeting up with your project mentor. Meetings must be synchronous (e.g., in office hours, or over Zoom). To find out who your project mentor is, look at this spreadsheet. You can schedule a meeting with your mentor over email. At least two, but ideally all, team members must be present.
+When you go to your meeting with your project mentor, ask them to approve your list. If they don't approve, you'll have more work to do to get your list to a place where you are prototyping what you need to. Do that work, and then seek approval asynchronously. 
+4. Code your prototypes. Your team has the freedom to decide which languages, UI frameworks, and libraries to use[2]. Just make sure that:
+* your tools let you run your UI on its intended device
+* your team will be able to learn the tools in the time they have
+How elaborate should your implementation prototypes be? As simple as possible. Write the minimum code needed to satisfy your requirements. A tempting but fatal mistake is to code up fully-featured components of your actual interface. That is not the goal of this assignment, and will likely take more time than you have to complete this assignment. 
+To clarify, one implementation prototype may only require a few dozen lines of code. Here's an example: an implementation prototype of a call to AI might require some dozens of lines of prompts, a couple dozen lines of code to call an AI API from the device you are prototyping for, and your inputs. What is important for such a prototype is getting the right code — here, getting a real AI doing the right thing, on the right input data and reliably — rather than the amount of code.
+In your submission, we want to see one demonstration of technical functionality per requirement. This will help us check how far along your implementation really is. 
+We don’t care how many implementation prototypes you have: you can have one prototype per requirement, or have prototypes fulfill multiple requirements. Similarly, your code can be all tangled together, or you can have separate code for each prototype. 
+What we do need for each requirement is evidence that you met the requirement (e.g., a short video), and a link to the place in your code that implements the requirement. 
+Tips and Boundaries (please read)
+Is it okay if just one member of our team writes the code? We wouldn't recommend it. This usually leads to situations where the team depends on just one member in the final hours of the project. A5 is deliberately designed so that most teams should be able to parallelize the work across your requirements. We recommend doing just that.
+Can we change our design? We are very revision-positive in this course. We expect that you will iterate on your design. But the thing to be careful about is that you will have to work to make sure your new design meets the typical criteria of usefulness and innovativeness. We note that all projects we selected at the start of A4.5 had great potential to meet or already met these criteria.
+We also strongly caution against removing the interesting parts of your design for the sake of making your UI easier to implement. This might make your project faster to finish, but it might mean you get less credit for your UI overall at the end of the semester. 
+In general, you should consult with your project mentor.
+Can I use AI to generate my code? Yes. Copilot, ChatGPT, Claude Code — all of these are fair game. Use them if they are useful! Here a few important guidelines:
+* You must credit AIs for all code they generate.
+* Your AIs may flounder on some important steps, like deploying code to a device, getting multiple devices to talk to each other, doing very new designs, getting custom input (camera/voice/etc). But you still have to make these parts work.
+* Teams are given zero grace if they can't fully implement their design because they find themselves unable to debug/edit AI-generated code.
+* You must be able to defend all design choices in your UI. If your AI makes choices for you that you cannot defend, it will be grounds for deduction on the final project.
+Can I skip over a database/server/calling an external API and instead hard code data in my UI? Maybe. Here is how to think about it: You can hardcode data in your UI if you can do so in a way that when a person interacts with your app, they can't tell if there is a real backend or not. Usually this means hard-coding a lot of data, covering the various paths your users will exercise. Just know that we on the teaching staff will likely try to exercise your final demos in ways that diverge from the examples that you show to us. 
+Submission Requirements
+Submit to Gradescope the following:
+Deliverable 1. Submit your technical requirements list and evidence that you met each one. For each requirement[3], write down:
+* The technical requirement in the prescribed format.
+* Evidence that you met the requirement, which can take one of several forms, depending on the requirement: 
+   * (preferred) Link to a very short[4], publicly accessible YouTube video
+      * To demonstrate your UI running on its target device, you will need to submit a video where the device itself is visible
+      * Otherwise, a screen capture recording is usually best
+   * A screenshot
+   * A picture of console output
+   * …or something else if necessary 
+* A link to a place in your code that implements the requirement. We recommend using GitHub permalinks, see here.
+* If necessary, any additional context we need to understand your evidence.
+* Again, do this for each requirement. Please don’t submit a video that is meant to show five requirements at once; this will make it very difficult to grade.
+Deliverable 2. Submit a few other process clippings. 
+* Link to a GitHub repo containing code for your implementation prototypes.
+   * The repository must be public.
+   * Any AI-generated code must be attributed.
+   * Repositories must contain READMEs that instructional staff can follow to run your implementation prototypes. It must be possible for them to get the results you show in your evidence clippings by following your instructions.
+* The name of your project mentor, and the date that you met with your project mentor to discuss technical requirements.
+General submission requirements:
+* Add all members of your team to the submission.
+* Make sure the links in your PDFs are clickable. 
+Grading
+This assignment will be graded out of 35 points.
+* [10 points] You have a complete requirements list that covers all significant technical questions (and the two Hello requirements). We guarantee that you will receive full credit for this if you get approval from your project mentor. Otherwise, you may lose significant points for requirements that are insufficiently concrete or ambitious, as well as for missing requirements, for this criteria and the below. 
+* [20 points] You provide evidence that shows all requirements are soundly satisfied. The evidence meets all of the requirements outlined in the prior section. If requirements are not convincingly satisfied, or missed altogether, it is up to your project mentor how much to deduct (based on how critical the requirement was). In general, you should expect approximately: 
+   * [20/20] Provided evidence shows all requirements are soundly satisfied. 
+   * [17/20] Requirements are largely satisfied, but some are narrowly missed. The implementation prototypes worked, but leave open minor concerns that the implementation will not work well enough in the UI.
+   * [15/20] Very weak evidence for one of the major requirements, such that it does not appear to have been satisfied, or major concerns remain.  
+   * [13/20] Very weak evidence for two of the major requirements.
+   * [as few as 0/20] Even more requirements have very weak evidence.
+* [5 points] The process clippings described in Deliverable 2 are submitted correctly.  
+Appendix: Example List of Requirements
+Imagine a team whose project is a collaborative music playing UI that lets you play a piano keyboard collaboratively with your friends on other devices with AI accompaniment.
+Their requirements list could look like this:
+1. "Hello world" app. Our team is going to implement our UI in React Native. We will make a one-screen React Native app with "Hello World" on the opening screen. We will show that we are able to open it on our target device — an iPad.
+2. "Hello styles." My style guide requires the colors #32a852 and #1475fc; typeface Lato at light, medium, and bold fonts; and icons from FontAwesome. I will add a screen to my Hello World app where I render divs with these colors; paragraphs with each of these fonts; and show my sample icons from my chosen icon library.
+3. Cross-device networking. We will show messages being passed between two iPads with < 0.1 second latency, containing the data the app needs to send (lists of triggered key names). We will show that these messages can be sent and received within iPad React Native apps.
+4. AI (tune generation).  We will show that we can quickly generate good AI music to accompany the user in real-time. Specifically, we will show that given a melody, an AI (I'm not yet sure which one) can generate a harmony in less than three seconds and it actually sounds good. We will show we can call this AI from the iPad React Native app.
+5. 2D drawing. Because we have to draw an interactive piano keyboard, we need an implementation prototype that shows we can make interactive 2D custom objects (like keys). We will show we can draw a single piano key using a drawing library in the iPad React Native app, and that we can capture when a user "presses" on it.
+6. External APIs (sound playback). We will show that we can play back the sounds necessary. Our UI needs crisp piano sounds for a full range of 88 piano keys. More specifically, we will show that we can call a sound API from our iPad React Native app that can play back a piano sound, including one high and one low note, and that it can play multiple key sounds simultaneously.
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+________________
+[1] We are not going to compare against your style guide for A4. It is okay if you have changed your style guide since that submission.
+[2] Our class teaches a bit of HTML/CSS/JavaScript/React, which might work for some teams.
+[3] FAQ: Do I still need a “Hello world” app if the functionality is clearly subsumed by my other prototypes? Yes, please. This just makes things easier to grade, and should take minimal extra effort/code. Remember that you can have multiple separate prototypes, so you can keep your code disentangled if you prefer. 
+[4] In many cases, five seconds may do. If your video is longer than a minute, it’s probably too long.

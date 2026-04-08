@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Yarny is a pattern/yarn management app built as a monorepo with an Expo/React Native mobile frontend and an Express.js backend. 
+Yarny is a knitting/crochet pattern management app built as a monorepo for a CIS 5120 HCI class final project. Users upload pattern PDFs which are parsed by AI into row-by-row instructions, then track progress as they work through projects. The codebase is structured to satisfy 6 technical requirements for Assignment 5 (Implementation Prototypes).
 
 ## Monorepo Structure
 
 - **`/mobile`** — Expo 54 + React Native app (TypeScript)
-- **`/backend`** — Express.js API server (JavaScript)
+- **`/backend`** — Express.js API server (JavaScript), PostgreSQL via Supabase
+- **`/docs`** — Assignment specs and project requirements
 
 ## Development Commands
 
@@ -25,121 +26,71 @@ npm run lint       # ESLint via expo lint
 ### Backend (`/backend`)
 ```bash
 npm start          # Start Express server (port 3000)
+npm run db:init    # Initialize PostgreSQL database schema
 ```
+
+## Environment Variables (backend `.env`)
+
+- `DATABASE_URL` — PostgreSQL connection string (SSL required)
+- `GEMINI_API_KEY` — Google Generative AI key (for PDF parsing)
+- `SUPABASE_URL` / `SUPABASE_ANON_KEY` — Supabase project credentials
+- `PORT` — Express port (default 3000)
 
 ## Architecture
 
 ### Mobile App
 - **Expo Router** with file-based routing in `app/`
-- **Bottom tab navigation**: Home (`index.tsx`) and Explore (`explore.tsx`) tabs configured in `app/(tabs)/_layout.tsx`
-- **Theme system**: Colors/fonts defined in `constants/theme.ts`, accessed via `useThemeColor()` hook. `ThemedText` and `ThemedView` components auto-apply light/dark mode colors
-- **Platform-aware components**: `ui/icon-symbol.tsx` uses SF Symbols on iOS, Material Icons on Android/web (separate `.ios.ts` and `.web.ts` files)
-- **Path aliases**: `@/*` maps to mobile root (e.g., `@/components`, `@/hooks`)
-- **Experimental features enabled**: React Compiler, New Architecture (in `app.json`)
+- **4-tab navigation** in `app/(tabs)/_layout.tsx`: Home, Community, Stats, Demo
+- **Demo tab**: Links to Hello World and Hello Styles screens (Req 1 & 2)
+- **Project flow**: `new-project.tsx` → title → image → PDF upload → API parses PDF → `project/[id]/active.tsx` for row-by-row tracking
+- **Active screen**: Shows pattern image, current row instruction, Previous/Next Row buttons, row counter
+- **Theme system**: Colors (`#AEC9D7`, `#457C99`, `#0F374E`), fonts (Marko One, Montserrat), sizes in `constants/theme.ts`
+- **Icons**: Material Icons from `@expo/vector-icons` + SF Symbols on iOS via `IconSymbol`
+- **Path aliases**: `@/*` maps to mobile root
+- **API layer**: All backend calls go through `services/api.ts`; Supabase client in `services/supabase.ts`
+- **User identity**: No auth — UUID generated on first launch, stored in AsyncStorage
 
 ### Backend
-- Standard Express MVC with Jade views, morgan logging, cookie-parser
-- Routes in `routes/`, views in `views/`, static files in `public/`
-- Entry point: `bin/www`
+- Standard Express app with entry point `bin/www`, app config in `app.js`
+- Routes in `routes/` — users, projects, pdf, progress, upload, comments
+- PostgreSQL connection pool in `db.js`, schema in `db-init.js`
+- Supabase client in `supabase.js` (storage for images/PDFs)
 
-## Database Schema
--- Users (no auth, just a device-generated UUID stored locally)
-CREATE TABLE users (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  username    text UNIQUE NOT NULL,
-  created_at  timestamptz DEFAULT now()
-);
+### AI PDF Parsing
+- Route: `POST /api/projects/:id/parse-pdf`
+- Uses Google Gemini 2.5 Flash (`@google/generative-ai`)
+- PDF uploaded to Supabase → backend fetches → Gemini extracts structured JSON (total_yards, sections, rows)
+- Results saved to DB in a transaction
 
--- Projects
-CREATE TABLE projects (
-  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id         uuid REFERENCES users(id) ON DELETE CASCADE,
-  title           text NOT NULL,
-  image_url       text,
-  is_public       boolean DEFAULT false,
-  total_yards     numeric,          -- extracted by AI from PDF
-  total_rows      int,              -- extracted by AI (sum of all rows)
-  created_at      timestamptz DEFAULT now(),
-  last_worked_at  timestamptz
-);
+## Database
 
--- Sections (e.g. "Granny Squares", "Cup (R)", "Cup (L)")
-CREATE TABLE sections (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id  uuid REFERENCES projects(id) ON DELETE CASCADE,
-  title       text NOT NULL,
-  position    int NOT NULL
-);
+Schema defined in `backend/db-init.js`. Key tables: `users`, `projects`, `sections`, `rows`, `progress`, `progress_log`, `comments`. All use UUID primary keys. Progress has a unique constraint on `(user_id, project_id)`.
 
--- Rows (individual instructions within a section)
-CREATE TABLE rows (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  section_id   uuid REFERENCES sections(id) ON DELETE CASCADE,
-  row_number   int NOT NULL,
-  instruction  text NOT NULL,
-  position     int NOT NULL          -- global position across whole project, for % calc
-);
+## API Routes
 
--- Progress (one record per user+project, tracks current position)
-CREATE TABLE progress (
-  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id             uuid REFERENCES users(id) ON DELETE CASCADE,
-  project_id          uuid REFERENCES projects(id) ON DELETE CASCADE,
-  current_row_id      uuid REFERENCES rows(id),
-  rows_completed      int DEFAULT 0,
-  updated_at          timestamptz DEFAULT now(),
-  UNIQUE(user_id, project_id)
-);
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/api/users` | Create user |
+| GET | `/api/users/:userId` | Get user |
+| POST | `/api/projects` | Create project |
+| GET | `/api/projects` | Public projects (community feed) |
+| GET | `/api/projects/:id` | Project with sections/rows |
+| DELETE | `/api/projects/:id` | Delete project |
+| POST | `/api/projects/:id/parse-pdf` | Upload & parse PDF with AI |
+| GET | `/api/projects/:id/comments` | Get project comments |
+| POST | `/api/projects/:id/comments` | Post a comment |
+| GET | `/api/users/:userId/projects` | User's projects with progress |
+| PATCH | `/api/users/:userId/projects/:id/progress` | Increment/decrement progress |
+| GET | `/api/users/:userId/stats` | Aggregated stats |
+| POST | `/api/upload/image` | Upload image to Supabase |
 
--- Progress log (append-only, for stats history chart)
-CREATE TABLE progress_log (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     uuid REFERENCES users(id) ON DELETE CASCADE,
-  project_id  uuid REFERENCES projects(id) ON DELETE CASCADE,
-  rows_added  int NOT NULL,           -- how many rows done in this session
-  logged_at   timestamptz DEFAULT now()
-);
+## Assignment 5 Requirement Mapping
 
--- Comments
-CREATE TABLE comments (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id     uuid REFERENCES users(id) ON DELETE CASCADE,
-  project_id  uuid REFERENCES projects(id) ON DELETE CASCADE,
-  row_id      uuid REFERENCES rows(id),   -- nullable, comment on specific row
-  body        text NOT NULL,
-  created_at  timestamptz DEFAULT now()
-);
-
-## Backend API Routes
-# Users
-POST   /api/users                          create user (username), returns id
-GET    /api/users/:userId                  get user info
-
-# Projects
-POST   /api/projects                       create project shell (title, image_url, is_public, user_id)
-GET    /api/projects                       all public projects (community feed)
-GET    /api/projects/:id                   project + sections + rows + derived stats
-DELETE /api/projects/:id                   delete project
-
-# PDF Parsing (the AI step)
-POST   /api/projects/:id/parse-pdf         multipart: upload PDF → AI extracts → saves sections/rows/total_yards/total_rows
-
-# Progress
-GET    /api/users/:userId/projects         user's own projects with current progress
-PATCH  /api/users/:userId/projects/:id/progress    body: { rows_to_add: 1 } → increments rows_completed, appends log
-GET    /api/users/:userId/stats            aggregated: today/week/all-time rows + yards
-
-## Implementation Notes
-
-- User auth: no login, UUID generated on first launch stored in AsyncStorage
-- PDFs: parsed on backend by Claude API, instructions stored in DB, PDF discarded
-- Yards used: derived at read time as (rows_completed / total_rows) * total_yards
-- Image uploads: expo-image-picker → Supabase Storage → store public URL in projects.image_url
-- Supabase client initialized in backend via @supabase/supabase-js
-
-## AI PDF Parsing
-
-- Route: POST /api/projects/:id/parse-pdf
-- Uses Anthropic SDK, model claude-opus-4-5
-- Extracts: total_yards, sections[], rows[] per section
-- Returns and saves structured JSON to DB
+| Req | Description | Key Files |
+|-----|-------------|-----------|
+| 1 — Hello World | "Hello World!" screen on iPhone | `app/demo/hello-world.tsx` |
+| 2 — Hello Styles | Colors, fonts, Material Icons, bento grid | `app/demo/hello-styles.tsx`, `constants/theme.ts` |
+| 3 — AI (PDF) | Upload PDF → AI parses into sections/rows | `app/new-project.tsx`, `backend/routes/pdf.js` |
+| 4 — Global DB | Community feed + comments (GET/POST) | `app/(tabs)/search.tsx`, `app/project/[id]/details.tsx`, `backend/routes/comments.js` |
+| 5 — Local State | Progress tracking + stats display | `app/(tabs)/index.tsx`, `app/(tabs)/stats.tsx`, `backend/routes/progress.js` |
+| 6 — Display & Nav | Pattern display with Previous/Next Row + counter | `app/project/[id]/active.tsx` |

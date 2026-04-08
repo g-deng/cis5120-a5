@@ -67,15 +67,16 @@ export default function ActiveCrochetingScreen() {
 
   const currentRow = allRows[rowsCompleted] ?? null;
   const isComplete = project && rowsCompleted >= allRows.length;
+  const isFirstRow = rowsCompleted === 0;
 
-  const handleNextRow = async () => {
+  const handleAdvance = async (delta: number) => {
     if (!userId || !id || advancing) return;
     setAdvancing(true);
     try {
-      await advanceProgress(userId, id, 1);
-      setRowsCompleted((prev) => prev + 1);
+      await advanceProgress(userId, id, delta);
+      setRowsCompleted((prev) => Math.max(0, prev + delta));
     } catch (err) {
-      console.error('Failed to advance:', err);
+      console.error('Failed to update progress:', err);
     } finally {
       setAdvancing(false);
     }
@@ -113,6 +114,11 @@ export default function ActiveCrochetingScreen() {
       )}
 
       <View style={styles.bottomCard}>
+        {/* Row counter */}
+        <Text style={styles.counter}>
+          Row {Math.min(rowsCompleted + 1, allRows.length)} of {allRows.length}
+        </Text>
+
         {isComplete ? (
           <Text style={styles.instruction}>Project complete!</Text>
         ) : currentRow ? (
@@ -126,18 +132,30 @@ export default function ActiveCrochetingScreen() {
           <Text style={styles.instruction}>Upload a pattern to get started</Text>
         )}
 
-        <TouchableOpacity
-          style={[styles.nextButton, (isComplete || !currentRow) && styles.buttonDisabled]}
-          onPress={handleNextRow}
-          disabled={isComplete || !currentRow || advancing}
-          activeOpacity={0.8}
-        >
-          {advancing ? (
-            <ActivityIndicator color={YarnyColors.textSecondary} />
-          ) : (
-            <Text style={styles.nextButtonText}>Next row</Text>
-          )}
-        </TouchableOpacity>
+        {/* Navigation buttons */}
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.navButton, styles.prevButton, isFirstRow && styles.buttonDisabled]}
+            onPress={() => handleAdvance(-1)}
+            disabled={isFirstRow || advancing}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.navButtonText}>Previous row</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.navButton, styles.nextButton, (isComplete || !currentRow) && styles.buttonDisabled]}
+            onPress={() => handleAdvance(1)}
+            disabled={isComplete || !currentRow || advancing}
+            activeOpacity={0.8}
+          >
+            {advancing ? (
+              <ActivityIndicator color={YarnyColors.textSecondary} />
+            ) : (
+              <Text style={styles.navButtonText}>Next row</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={styles.detailsButton}
@@ -182,6 +200,14 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 32,
   },
+  counter: {
+    fontFamily: YarnyFonts.bodySemiBold,
+    fontSize: YarnySizes.caption,
+    color: YarnyColors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 8,
+    opacity: 0.8,
+  },
   sectionName: {
     fontFamily: YarnyFonts.body,
     fontSize: YarnySizes.body,
@@ -195,14 +221,25 @@ const styles = StyleSheet.create({
     color: YarnyColors.textSecondary,
     marginBottom: 16,
   },
-  nextButton: {
-    backgroundColor: YarnyColors.button,
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  navButton: {
+    flex: 1,
     borderRadius: 24,
     paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: 10,
   },
-  nextButtonText: {
+  prevButton: {
+    borderWidth: 2,
+    borderColor: YarnyColors.button,
+  },
+  nextButton: {
+    backgroundColor: YarnyColors.button,
+  },
+  navButtonText: {
     fontFamily: YarnyFonts.bodySemiBold,
     fontSize: YarnySizes.body,
     color: YarnyColors.textSecondary,

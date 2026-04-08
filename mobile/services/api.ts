@@ -62,6 +62,19 @@ export interface UserStats {
   yards: { used: number };
 }
 
+export interface ActivityEntry {
+  rows_added: number;
+  logged_at: string;
+  project_title: string;
+}
+
+export interface Comment {
+  id: string;
+  body: string;
+  created_at: string;
+  username: string;
+}
+
 // Fetch wrapper
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -126,9 +139,39 @@ export function advanceProgress(userId: string, projectId: string, rowsToAdd: nu
   });
 }
 
+// Saved projects
+export function saveProject(userId: string, projectId: string) {
+  return apiFetch<{ message: string }>(`/api/users/${userId}/saved/${projectId}`, {
+    method: 'POST',
+  });
+}
+
+export function unsaveProject(userId: string, projectId: string) {
+  return apiFetch<{ message: string }>(`/api/users/${userId}/saved/${projectId}`, {
+    method: 'DELETE',
+  });
+}
+
+// Comments
+export function getProjectComments(projectId: string) {
+  return apiFetch<Comment[]>(`/api/projects/${projectId}/comments`);
+}
+
+export function postComment(projectId: string, userId: string, body: string) {
+  return apiFetch<Comment>(`/api/projects/${projectId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, body }),
+  });
+}
+
 // Stats
 export function getUserStats(userId: string) {
   return apiFetch<UserStats>(`/api/users/${userId}/stats`);
+}
+
+// Activity
+export function getUserActivity(userId: string) {
+  return apiFetch<ActivityEntry[]>(`/api/users/${userId}/activity`);
 }
 
 // Uploads — image goes directly to Supabase Storage from the client

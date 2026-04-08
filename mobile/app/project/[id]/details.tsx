@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
+  FlatList,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,7 +17,10 @@ import { useUser } from '@/hooks/use-user';
 import {
   getProjectDetail,
   getUserProjects,
+  getProjectComments,
+  postComment,
   type ProjectDetail,
+  type Comment,
 } from '@/services/api';
 import { CircularProgress } from '@/components/circular-progress';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -39,7 +44,20 @@ export default function ProjectDetailScreen() {
 
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [rowsCompleted, setRowsCompleted] = useState(0);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentText, setCommentText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const fetchComments = useCallback(async () => {
+    if (!id) return;
+    try {
+      const data = await getProjectComments(id);
+      setComments(data);
+    } catch (err) {
+      console.error('Failed to fetch comments:', err);
+    }
+  }, [id]);
 
   useFocusEffect(
     useCallback(() => {
@@ -49,6 +67,7 @@ export default function ProjectDetailScreen() {
           const [detail, userProjects] = await Promise.all([
             getProjectDetail(id),
             getUserProjects(userId),
+            fetchComments(),
           ]);
           setProject(detail);
           const myProject = userProjects.find((p) => p.id === id);
@@ -59,8 +78,22 @@ export default function ProjectDetailScreen() {
           setLoading(false);
         }
       })();
-    }, [id, userId])
+    }, [id, userId, fetchComments])
   );
+
+  const handlePostComment = async () => {
+    if (!id || !userId || !commentText.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      const newComment = await postComment(id, userId, commentText.trim());
+      setComments((prev) => [...prev, newComment]);
+      setCommentText('');
+    } catch (err) {
+      console.error('Failed to post comment:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -136,10 +169,33 @@ export default function ProjectDetailScreen() {
           </View>
         ))}
 
-        {/* Community placeholder */}
-        <Text style={styles.sectionHeader}>Community</Text>
-        <View style={styles.communityPlaceholder}>
-          <Text style={styles.placeholderText}>Comments coming soon</Text>
+        {/* Comments */}
+        <Text style={styles.sectionHeader}>Comments</Text>
+        {comments.length === 0 ? (
+          <Text style={styles.emptyComments}>No comments yet</Text>
+        ) : (
+          comments.map((c) => (
+            <View key={c.id} style={styles.commentCard}>
+              <Text style={styles.commentAuthor}>{c.username}</Text>
+              <Text style={styles.commentBody}>{c.body}</Text>
+            </View>
+          ))
+        )}
+        <View style={styles.commentInputRow}>
+          <TextInput
+            style={styles.commentInput}
+            placeholder="Add a comment..."
+            placeholderTextColor={YarnyColors.border}
+            value={commentText}
+            onChangeText={setCommentText}
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, (!commentText.trim() || submitting) && styles.buttonDisabled]}
+            onPress={handlePostComment}
+            disabled={!commentText.trim() || submitting}
+          >
+            <Text style={styles.sendButtonText}>Send</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -217,16 +273,61 @@ const styles = StyleSheet.create({
     fontSize: YarnySizes.body,
     color: YarnyColors.textPrimary,
   },
-  communityPlaceholder: {
-    backgroundColor: YarnyColors.card,
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
+  emptyComments: {
+    fontFamily: YarnyFonts.body,
+    fontSize: YarnySizes.body,
+    color: YarnyColors.textPrimary,
+    opacity: 0.6,
+    marginBottom: 12,
   },
-  placeholderText: {
+  commentCard: {
+    backgroundColor: YarnyColors.card,
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  commentAuthor: {
+    fontFamily: YarnyFonts.bodySemiBold,
+    fontSize: YarnySizes.caption,
+    color: YarnyColors.textSecondary,
+    marginBottom: 2,
+  },
+  commentBody: {
     fontFamily: YarnyFonts.body,
     fontSize: YarnySizes.body,
     color: YarnyColors.textSecondary,
+  },
+  commentInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontFamily: YarnyFonts.body,
+    fontSize: YarnySizes.body,
+    color: YarnyColors.textPrimary,
+    borderWidth: 1,
+    borderColor: YarnyColors.border,
+  },
+  sendButton: {
+    backgroundColor: YarnyColors.button,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+  },
+  sendButtonText: {
+    fontFamily: YarnyFonts.bodySemiBold,
+    fontSize: YarnySizes.body,
+    color: YarnyColors.textSecondary,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   errorText: {
     fontFamily: YarnyFonts.body,

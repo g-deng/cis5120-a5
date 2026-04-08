@@ -29,6 +29,7 @@ export default function NewProjectScreen() {
   const [pdfName, setPdfName] = useState<string | null>(null);
   const [isPublic, setIsPublic] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState('');
 
   const pickPdf = async () => {
     const result = await DocumentPicker.getDocumentAsync({
@@ -52,11 +53,13 @@ export default function NewProjectScreen() {
       // 1. Upload image if selected
       let imageUrl: string | null = null;
       if (imageUri) {
+        setStatus('Uploading image...');
         const { url } = await uploadImage(imageUri);
         imageUrl = url;
       }
 
       // 2. Create project
+      setStatus('Creating project...');
       const project = await createProject({
         title: title.trim(),
         image_url: imageUrl,
@@ -66,11 +69,12 @@ export default function NewProjectScreen() {
 
       // 3. Parse PDF if selected
       if (pdfUri && pdfName) {
+        setStatus('Parsing your PDF...');
         await parsePdf(project.id, pdfUri, pdfName);
       }
 
       // 4. Navigate to the new project
-      router.replace(`/project/${project.id}/active`);
+      router.push(`/project/${project.id}/active`);
     } catch (err: any) {
       Alert.alert('Error', err.message || 'Failed to create project');
     } finally {
@@ -113,7 +117,10 @@ export default function NewProjectScreen() {
           activeOpacity={0.8}
         >
           {saving ? (
-            <ActivityIndicator color={YarnyColors.textSecondary} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <ActivityIndicator color={YarnyColors.textSecondary} size="small" />
+              <Text style={styles.saveButtonText}>{status}</Text>
+            </View>
           ) : (
             <Text style={styles.saveButtonText}>Save</Text>
           )}
