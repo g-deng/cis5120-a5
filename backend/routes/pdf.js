@@ -79,11 +79,7 @@ Return ONLY valid JSON, no markdown fences, no explanation. If you are unsure ab
     // Write to database in a transaction
     await client.query('BEGIN');
 
-    await client.query(
-      'UPDATE projects SET total_yards = $1, total_rows = $2 WHERE id = $3',
-      [parsed.total_yards, parsed.total_rows, req.params.id]
-    );
-
+    let actualRowCount = 0;
     for (const section of parsed.sections) {
       const sectionResult = await client.query(
         'INSERT INTO sections (project_id, title, position) VALUES ($1, $2, $3) RETURNING id',
@@ -96,8 +92,15 @@ Return ONLY valid JSON, no markdown fences, no explanation. If you are unsure ab
           'INSERT INTO rows (section_id, row_number, instruction, position) VALUES ($1, $2, $3, $4)',
           [sectionId, row.row_number, row.instruction, row.position]
         );
+        actualRowCount++;
       }
     }
+
+    // Use actual inserted row count, not the AI's estimate
+    await client.query(
+      'UPDATE projects SET total_yards = $1, total_rows = $2 WHERE id = $3',
+      [parsed.total_yards, actualRowCount, req.params.id]
+    );
 
     await client.query('COMMIT');
     res.json(parsed);

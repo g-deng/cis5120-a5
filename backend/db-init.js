@@ -71,7 +71,18 @@ async function initializeDatabase() {
       );
     `);
 
-    // 7. Comments
+    // 7. Saved projects (user bookmarks a public project to work on)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS saved_projects (
+        id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id     uuid REFERENCES users(id) ON DELETE CASCADE,
+        project_id  uuid REFERENCES projects(id) ON DELETE CASCADE,
+        saved_at    timestamptz DEFAULT now(),
+        UNIQUE(user_id, project_id)
+      );
+    `);
+
+    // 8. Comments
     await pool.query(`
       CREATE TABLE IF NOT EXISTS comments (
         id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -83,7 +94,7 @@ async function initializeDatabase() {
       );
     `);
 
-    console.log('All 7 tables created successfully');
+    console.log('All 8 tables created successfully');
   } catch (err) {
     console.error('Error initializing database:', err.message);
   } finally {

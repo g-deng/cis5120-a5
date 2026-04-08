@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// GET /api/users/:userId/projects — user's own projects with progress
+// GET /api/users/:userId/projects — user's own + saved projects with progress
 router.get('/:userId/projects', async (req, res) => {
   try {
     const { userId } = req.params;
@@ -14,6 +14,7 @@ router.get('/:userId/projects', async (req, res) => {
        FROM projects p
        LEFT JOIN progress pr ON pr.project_id = p.id AND pr.user_id = $1
        WHERE p.user_id = $1
+          OR p.id IN (SELECT project_id FROM saved_projects WHERE user_id = $1)
        ORDER BY p.last_worked_at DESC NULLS LAST`,
       [userId]
     );
@@ -33,6 +34,36 @@ router.get('/:userId/projects', async (req, res) => {
   }
 });
 
+// POST /api/users/:userId/saved/:projectId — save a public project
+router.post('/:userId/saved/:projectId', async (req, res) => {
+  try {
+    const { userId, projectId } = req.params;
+    await pool.query(
+      `INSERT INTO saved_projects (user_id, project_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, project_id) DO NOTHING`,
+      [userId, projectId]
+    );
+    res.status(201).json({ message: 'Project saved' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/users/:userId/saved/:projectId — unsave a project
+router.delete('/:userId/saved/:projectId', async (req, res) => {
+  try {
+    const { userId, projectId } = req.params;
+    await pool.query(
+      'DELETE FROM saved_projects WHERE user_id = $1 AND project_id = $2',
+      [userId, projectId]
+    );
+    res.json({ message: 'Project removed' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // PATCH /api/users/:userId/projects/:id/progress — increment progress
 router.patch('/:userId/projects/:id/progress', async (req, res) => {
   const client = await pool.connect();
@@ -43,15 +74,23 @@ router.patch('/:userId/projects/:id/progress', async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Upsert progress
+    // Get total row count for upper bound clamp
+    const totalResult = await client.query(
+      `SELECT COUNT(*) AS cnt FROM rows
+       WHERE section_id IN (SELECT id FROM sections WHERE project_id = $1)`,
+      [projectId]
+    );
+    const totalRows = parseInt(totalResult.rows[0].cnt, 10);
+
+    // Upsert progress (clamp between 0 and total rows)
     const progressResult = await client.query(
       `INSERT INTO progress (user_id, project_id, rows_completed, updated_at)
-       VALUES ($1, $2, $3, NOW())
+       VALUES ($1, $2, LEAST(GREATEST($3, 0), $4), NOW())
        ON CONFLICT (user_id, project_id)
-       DO UPDATE SET rows_completed = progress.rows_completed + $3,
+       DO UPDATE SET rows_completed = LEAST(GREATEST(progress.rows_completed + $3, 0), $4),
                      updated_at = NOW()
        RETURNING *`,
-      [userId, projectId, rows_to_add]
+      [userId, projectId, rows_to_add, totalRows]
     );
     const progress = progressResult.rows[0];
 
@@ -130,6 +169,25 @@ router.get('/:userId/stats', async (req, res) => {
         used: Math.round(Number(yardStats.rows[0].used) * 100) / 100,
       },
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/users/:userId/activity — recent activity entries
+router.get('/:userId/activity', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const result = await pool.query(
+      `SELECT pl.rows_added, pl.logged_at, p.title AS project_title
+       FROM progress_log pl
+       JOIN projects p ON p.id = pl.project_id
+       WHERE pl.user_id = $1
+       ORDER BY pl.logged_at DESC
+       LIMIT 5`,
+      [userId]
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
